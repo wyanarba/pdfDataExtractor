@@ -9,6 +9,9 @@ import (
 )
 
 type PageData struct {
+	// Индекс корпуса (0, 1)
+	BuildingIndex int
+
 	// Номер страницы в .pdf файле
 	PdfPageNumber int
 
@@ -16,9 +19,6 @@ type PageData struct {
 	Date         string  // Дата "13.06.2026г. (суббота)"
 	DateShort    string  // Короткая дата "13.06.2026"
 	DateFontSize float64 // Размер шрифта надписи с датой, в пунктах
-
-	// Номер корпуса
-	BuildingNum int
 
 	// Размеры изображений
 	boundsBeforeCut image.Rectangle // До обрезки
@@ -64,7 +64,7 @@ func (pd *processingData) init(buildingNum int, date string, dateFontSize float6
 		strconv.FormatInt(int64(buildingNum+1), 10)+" корпус",
 		timesBoldFont,
 		dateFontSize,
-		400,
+		float64(DPI),
 		0,
 	)
 
@@ -73,7 +73,7 @@ func (pd *processingData) init(buildingNum int, date string, dateFontSize float6
 		date,
 		timesFont,
 		dateFontSize,
-		400,
+		float64(DPI),
 		int(float32(fBorder)*0.3),
 	)
 

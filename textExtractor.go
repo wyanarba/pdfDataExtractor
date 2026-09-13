@@ -45,7 +45,7 @@ func ExtractText(pageInfo *PageData, pdfFilePath string, pdfPage int, tempImgPat
 		imgTextBoxes = []imgTextBox{} // Фразы в изображении
 
 		// PointsToPixels
-		ratio     float64 = 400.0 / 72.0                  // Коэффициент ppi / const(72)
+		ratio     float64 = float64(DPI) / 72.0           // Коэффициент ppi / const(72)
 		imgHeight         = pageInfo.boundsBeforeCut.Dy() // Высота таблицы (нужна для PointsToPixels)
 
 		// Смещение после обрезки

@@ -1,0 +1,58 @@
+func main() {
+	const (
+		countBuildings = 2
+	)
+
+	var (
+		scheduleFilesURL = [countBuildings]string{
+			"https://rasp.vksit.ru/spo.pdf",
+			"https://rasp.vksit.ru/npo.pdf",
+		}
+
+		scheduleFilesNames = [2]string{
+			"spo.pdf",
+			"npo.pdf",
+		}
+
+		downloadedFiles = [2][]byte{}
+		currentFiles    = [2][]byte{}
+
+		err error
+	)
+
+	// Чтение текущих файлов с диска при старте
+	{
+		for i := range countBuildings {
+			currentFiles[i], err = os.ReadFile(scheduleFilesNames[i])
+
+			if err != nil {
+				log.Fatalln("Не удалось прочитать файл", scheduleFilesNames[i], ", при старте. Ошибка:", err.Error())
+			}
+		}
+	}
+
+	{
+		// Сравнение текущих файлов с версией из URL
+		for i := range countBuildings {
+
+			// Скачивание файлов
+			{
+				resp, err := http.Get(scheduleFilesURL[i])
+				if err != nil {
+					log.Println("[ERROR] Не удалось скачать новую версию файла", scheduleFilesNames[i], "с сайта. Ошибка:", err.Error())
+					continue
+				}
+				downloadedFiles[i], err = io.ReadAll(resp.Body)
+				if err != nil {
+					log.Println("[ERROR]", err.Error())
+					continue
+				}
+			}
+
+			// Сравнение
+			fmt.Println(slices.Compare(downloadedFiles[i], currentFiles[i]))
+		}
+	}
+}
+
+

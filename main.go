@@ -1,15 +1,13 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
 	"os/exec"
 	"path"
 	"pdfDataExtractor/fileutils"
-	"slices"
 	"strconv"
 	"time"
 
@@ -25,12 +23,59 @@ const (
 	HeaderRowsCount    = 2 // Вертикальные
 )
 
-func processPDF() {
+var (
+	DPI = 300
+)
+
+func main() {
+	var (
+		pdfFilePath   string
+		buildingIndex int
+	)
+
+	flag.StringVar(&pdfFilePath, "pdfPath", "", "Путь к файлу .pdf для обработки")
+	flag.IntVar(&buildingIndex, "buildingIndex", 0, "Индекс корпуса (0 - первый, 1 - второй)")
+	flag.Parse()
+
+	required := 0
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == "pdfPath" {
+			required += 1
+		}
+
+		if f.Name == "buildingIndex" {
+			required += 1
+		}
+	})
+
+	if required < 2 {
+		fmt.Println("Ошибка: пропущен обязательный флаг!")
+		flag.Usage() // Показываем справку
+		os.Exit(1)
+	}
+
+	processPdf(pdfFilePath, buildingIndex)
+}
+
+// makeBaseImageFromPdf из страницы pdf делает изображение
+func makeBaseImageFromPdf(pdfFilePath, PathToBasicImg string, pageNumber int) {
+	err := exec.Command("magick", "-density", strconv.Itoa(DPI), // Утилита и флаги
+		pdfFilePath+fmt.Sprintf("[%d]", pageNumber), // Файл pdf и страница
+		"-background", "white", "-flatten", "-quality", "100", // Флаги
+		PathToBasicImg, // Путь для сохранения
+	).Run()
+	if err != nil {
+		fmt.Printf("Ошибка при создании изображения: %v\n", err)
+		return
+	}
+}
+
+// processPdf полный процесс обработки pdf файла
+func processPdf(pdfFilePath string, buildingIndex int) {
 	var (
 		// Путь к папке с картинками
 		imagesBaseFolder = "rImages"
 
-		pdfFilePath  string = "npo29.pdf"
 		pdfPageCount int
 	)
 
@@ -45,73 +90,76 @@ func processPDF() {
 		pdfPageCount = r.NumPage()
 	}
 	start := time.Now()
-	t := start
 
+	// Обработка каждой страницы
 	for pageNumber := range pdfPageCount {
 		var (
+			// Максимальное число страниц файла, для корректного расчёта смещения
+			maxPages = 10
+
+			// Смещение в названиях папок и файлов, для работы нескольких корпусов
+			// Пример: индекс страницы 0 и индекс корпуса 0 -> 0; индекс страницы 2 индекс корпуса 1 -> 11
+			offset = buildingIndex * maxPages
+
 			// Папка, куда будут сохранены специальные версии картинок (для групп, преподавателей, дебага)
-			specialImagesFolder = path.Join(imagesBaseFolder, strconv.Itoa(pageNumber))
+			specialImagesFolder = path.Join(imagesBaseFolder, strconv.Itoa(pageNumber+offset))
 
 			// Путь к основной картинке с расписанием
-			PathToBasicImg = path.Join(imagesBaseFolder, fmt.Sprintf("%d.png", pageNumber))
+			PathToBasicImg = path.Join(imagesBaseFolder, fmt.Sprintf("%d.png", pageNumber+offset))
 
-			pageInfo = &PageData{BuildingNum: 0}
+			pageInfo = &PageData{BuildingIndex: buildingIndex}
 		)
-
-		//Pdf page -> .png
-		{
-			err := exec.Command("magick", "-density", "400", // Утилита и флаги
-				pdfFilePath+fmt.Sprintf("[%d]", pageNumber), // Файл pdf и страница
-				"-background", "white", "-flatten", "-quality", "100", // Флаги
-				PathToBasicImg, // Путь для сохранения
-			).Run()
-			if err != nil {
-				fmt.Printf("Ошибка при создании изображения: %v\n", err)
-				return
-			}
-			fmt.Println("Изображение получено")
-		}
-		// TEMP таймер
-		fmt.Println("Запекание\\t", time.Since(t))
-		t = time.Now()
-
-		// Чтение получившейся картинки
-		pageInfo.tempData.img = fileutils.ReadImg(PathToBasicImg)
 
 		// Очистка specialImagesFolder от старого расписания
 		{
-			if err := os.RemoveAll(specialImagesFolder); err != nil {
-				log.Fatalf("Ошибка при очистке: %v", err)
+			// Проверка на существование папки
+			info, err := os.Stat(specialImagesFolder)
+			if err == nil && info.IsDir() {
+
+				// Удаление папки с её содержимым
+				if err := os.RemoveAll(specialImagesFolder); err != nil {
+					log.Fatalf("Очистка папки не удалась: %v", err)
+				}
 			}
 
-			// Создание чистой папки.
+			// Создание новой пустой папки.
 			if err := os.MkdirAll(specialImagesFolder, 0755); err != nil {
 				log.Fatalf("Ошибка при создании папки: %v", err)
 			}
 		}
 
-		// TEMP таймер
-		fmt.Println("Подготовка\\t", time.Since(t))
-		t = time.Now()
 		// Обработка изображения
 		{
-			// Обрезка фона базовой картинки
-			CropImage(
-				pageInfo,
-				PathToBasicImg,
-			)
-			// TEMP таймер
-			fmt.Println("Обрезка фона\\t", time.Since(t))
-			t = time.Now()
+			// Уменьшать DPI, пока фото не подойдёт под требования телеграмма
+			imgIsDone := false
+			for imgIsDone != true {
+				//Pdf page -> .png
+				makeBaseImageFromPdf(pdfFilePath, PathToBasicImg, pageNumber)
+				fmt.Println("Страница запечена, DPI:", DPI)
+
+				// Чтение получившейся картинки
+				pageInfo.tempData.img = fileutils.ReadImg(PathToBasicImg)
+
+				// Обрезка фона базовой картинки
+				CropImage(
+					pageInfo,
+					PathToBasicImg,
+				)
+
+				// Требование от телеграмм api, что бы длинна + ширина до 10 000
+				rect := pageInfo.tempData.img.Rect
+				if rect.Dx()+rect.Dy() >= 10000 {
+					DPI -= 30
+				} else {
+					imgIsDone = true
+				}
+			}
 
 			// Извлекаем информацию о ячейках таблицы по фото
 			GetCellsFromImage(
 				pageInfo,
 				path.Join(specialImagesFolder, "temp.png"),
 			)
-			// TEMP таймер
-			fmt.Println("Извлекаем информацию о ячейках\\t", time.Since(t))
-			t = time.Now()
 
 			// Извлекаем текст из страницы .pdf и распределяем его по ячейкам
 			ExtractText(
@@ -120,100 +168,29 @@ func processPDF() {
 				pageNumber,
 				path.Join(specialImagesFolder, "temp.png"),
 			)
-			// TEMP таймер
-			fmt.Println("Извлекаем текст из страницы\\t", time.Since(t))
-			t = time.Now()
 
 			// Подготавливаем картинки с подписями над маленькими версиями расписания
 			pageInfo.tempData.init(
-				pageInfo.BuildingNum,
+				pageInfo.BuildingIndex,
 				pageInfo.Date,
 				pageInfo.DateFontSize,
 				pageInfo.Cells[0][0].Border[0],
 			)
-			// TEMP таймер
-			fmt.Println("Подготавливаем картинки с подписями\\t", time.Since(t))
-			t = time.Now()
 
 			// Создаём изображения для преподавателей
 			CreateTeachersImages(
 				pageInfo,
 				specialImagesFolder,
 			)
-			// TEMP таймер
-			fmt.Println("Создаём изображения для преподавателей\\t", time.Since(t))
-			t = time.Now()
 
 			// Создаём изображения для групп
 			CreateGroupsImages(
 				pageInfo,
 				specialImagesFolder,
 			)
-			// TEMP таймер
-			fmt.Println("Создаём изображения для групп\\t", time.Since(t))
-			t = time.Now()
 		}
-
-		break
 	}
 
 	// TEMP таймер
-	fmt.Println("ВСЕГО\\t", time.Since(start))
-}
-
-func main() {
-	const (
-		countBuildings = 2
-	)
-
-	var (
-		scheduleFilesURL = [countBuildings]string{
-			"https://rasp.vksit.ru/spo.pdf",
-			"https://rasp.vksit.ru/npo.pdf",
-		}
-
-		scheduleFilesNames = [2]string{
-			"spo.pdf",
-			"npo.pdf",
-		}
-
-		downloadedFiles = [2][]byte{}
-		currentFiles    = [2][]byte{}
-
-		err error
-	)
-
-	// Чтение текущих файлов с диска при старте
-	{
-		for i := range countBuildings {
-			currentFiles[i], err = os.ReadFile(scheduleFilesNames[i])
-
-			if err != nil {
-				log.Fatalln("Не удалось прочитать файл", scheduleFilesNames[i], ", при старте. Ошибка:", err.Error())
-			}
-		}
-	}
-
-	{
-		// Сравнение текущих файлов с версией из URL
-		for i := range countBuildings {
-
-			// Скачивание файлов
-			{
-				resp, err := http.Get(scheduleFilesURL[i])
-				if err != nil {
-					log.Println("[ERROR] Не удалось скачать новую версию файла", scheduleFilesNames[i], "с сайта. Ошибка:", err.Error())
-					continue
-				}
-				downloadedFiles[i], err = io.ReadAll(resp.Body)
-				if err != nil {
-					log.Println("[ERROR]", err.Error())
-					continue
-				}
-			}
-
-			// Сравнение
-			fmt.Println(slices.Compare(downloadedFiles[i], currentFiles[i]))
-		}
-	}
+	fmt.Println("Обработанно за", time.Since(start))
 }
