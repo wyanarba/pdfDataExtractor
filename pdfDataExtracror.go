@@ -20,7 +20,6 @@ import (
 	_ "image/png"
 
 	"github.com/ledongthuc/pdf"
-
 	"github.com/wyanarba/pdfDataExtractor/fileutils"
 )
 
@@ -31,6 +30,8 @@ const (
 )
 
 func ProcessPdf(pdfFilePath string, buildingIndex int) *FileData {
+	Settings.Logger.Debug("aaaa")
+
 	var fileData = FileData{
 		PdfFileName:   pdfFilePath,
 		buildingIndex: buildingIndex,
@@ -356,6 +357,7 @@ func trackPageChanges(newPage *PageData, newHash string) {
 				case CellType_Divided:
 					copyChangeStatus(newCell.DividedParts[0], oldCell.DividedParts[0])
 					copyChangeStatus(newCell.DividedParts[1], oldCell.DividedParts[1])
+					copyChangeStatus(newCell, oldCell)
 
 				// Часть от большой ячейки
 				case CellType_PartOfDivided:
@@ -411,6 +413,7 @@ func trackPageChanges(newPage *PageData, newHash string) {
 				case CellType_Divided:
 					compareCell(newCell.DividedParts[0], oldCell.DividedParts[0])
 					compareCell(newCell.DividedParts[1], oldCell.DividedParts[1])
+					compareCell(newCell, oldCell)
 
 				// Часть от большой ячейки
 				case CellType_PartOfDivided:
