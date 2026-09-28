@@ -6,7 +6,7 @@ import (
 )
 
 // LoadFileInfo получает информацию о нужной странице и файле из бд.
-type LoadFileInfo func(dayId int) (dailyPage models.DailyPage, err error)
+type LoadFileInfo func(dayId int, buildingIndex int) (dailyPage models.DailyPage, err error)
 
 type SettingsS struct {
 	// Базовые пути

@@ -267,7 +267,7 @@ func trackPageChanges(newPage *PageData, newHash string) {
 			return
 		}
 
-		dInfo, err := Settings.LoadFileInfoFunc(newPage.DateDayNumber)
+		dInfo, err := Settings.LoadFileInfoFunc(newPage.DateDayNumber, newPage.BuildingIndex)
 
 		// Страница не найдена
 		if err != nil || dInfo.Day != newPage.DateDayNumber {
