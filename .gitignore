@@ -1,0 +1,13 @@
+files/lastPdfs/*
+!files/lastPdfs/.gitkeep
+
+files/logs/*
+!files/logs/.gitkeep
+
+files/rImages/*
+!files/rImages/.gitkeep
+
+files/storage/*
+!files/storage/.gitkeep
+
+files/users.json
