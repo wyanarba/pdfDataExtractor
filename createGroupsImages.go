@@ -3,6 +3,7 @@ package pdfDataExtractor
 import (
 	"image"
 	"path"
+	"slices"
 	"sync"
 
 	"github.com/wyanarba/pdfDataExtractor/fileutils"
@@ -115,7 +116,7 @@ func CreateGroupsImages(pageInfo *PageData, saveFolderPath string) {
 		}
 
 		// Изменено ли расписание группы
-		{
+		if pageInfo.doFindChanges == true {
 			for j := lowerCell.J; j <= upperCell.J; j++ {
 				cell := pageInfo.Cells[upperCell.I][j]
 				if cell.IsChanged {
@@ -159,5 +160,32 @@ func CreateGroupsImages(pageInfo *PageData, saveFolderPath string) {
 
 	for groupName := range foundGroups {
 		pageInfo.FoundGroups = append(pageInfo.FoundGroups, groupName)
+	}
+
+	// Заполнение pageInfo.TeacherCells
+	for groupName := range groups {
+		pageInfo.GroupCells[groupName] = [][2]int{}
+
+		currentCell := groups[groupName]
+
+		pageInfo.GroupCells[groupName] = append(
+			pageInfo.GroupCells[groupName],
+			[2]int{currentCell.I, currentCell.J},
+		)
+	}
+	if pageInfo.doFindChanges == true {
+		// Сравнение с pageInfo.oldTeacherCells
+		if len(pageInfo.oldGroupCells) != 0 {
+			for groupName := range pageInfo.oldGroupCells {
+				isChanged := slices.Equal(
+					pageInfo.oldGroupCells[groupName],
+					pageInfo.GroupCells[groupName],
+				) == false
+
+				if isChanged {
+					pageInfo.ChangedGroups[groupName] = struct{}{}
+				}
+			}
+		}
 	}
 }

@@ -3,6 +3,7 @@ package pdfDataExtractor
 import (
 	_ "embed"
 	"path"
+	"slices"
 	"sync"
 
 	"image"
@@ -280,7 +281,8 @@ func CreateTeachersImages(pageInfo *PageData, saveFolderPath string) {
 					ColorHighlightMain,
 				)
 
-				if currentCell.IsChanged {
+				// Отслеживание изменений
+				if pageInfo.doFindChanges == true && currentCell.IsChanged {
 					changedTeachers <- teacherName
 				}
 			}
@@ -334,6 +336,34 @@ func CreateTeachersImages(pageInfo *PageData, saveFolderPath string) {
 	for teacherName := range foundTeachers {
 		pageInfo.FoundTeachers = append(pageInfo.FoundTeachers, teacherName)
 	}
+
+	// Заполнение pageInfo.TeacherCells
+	for teacherName := range teachers {
+		pageInfo.TeacherCells[teacherName] = [][2]int{}
+
+		for _, currentCell := range teachers[teacherName] {
+			pageInfo.TeacherCells[teacherName] = append(
+				pageInfo.TeacherCells[teacherName],
+				[2]int{currentCell.I, currentCell.J},
+			)
+		}
+	}
+	if pageInfo.doFindChanges == true {
+		// Сравнение с pageInfo.oldTeacherCells
+		if len(pageInfo.oldTeacherCells) != 0 {
+			for teacherName := range pageInfo.oldTeacherCells {
+				isChanged := slices.Equal(
+					pageInfo.oldTeacherCells[teacherName],
+					pageInfo.TeacherCells[teacherName],
+				) == false
+
+				if isChanged {
+					pageInfo.ChangedTeachers[teacherName] = struct{}{}
+				}
+			}
+		}
+	}
+
 }
 
 func GetLineCellAndTime(fileInfo *PageData, img image.Image, targetCell *CellData, margin IndentInfo) image.Image {

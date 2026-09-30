@@ -135,8 +135,14 @@ func processPdfPage(fileData *FileData, pageNumber int, imagesBaseFolder string)
 		PdfPageNumber: pageNumber,
 		DPI:           300,
 
+		doFindChanges:   true,
 		ChangedGroups:   make(map[string]struct{}),
 		ChangedTeachers: make(map[string]struct{}),
+
+		GroupCells:      make(map[string]([][2]int)),
+		TeacherCells:    make(map[string]([][2]int)),
+		oldGroupCells:   make(map[string]([][2]int)),
+		oldTeacherCells: make(map[string]([][2]int)),
 	}
 
 	var (
@@ -249,6 +255,17 @@ func processPdfPage(fileData *FileData, pageNumber int, imagesBaseFolder string)
 
 		// Сохранение картинки с надписями об изменениях
 		fileutils.SaveImg(pageInfo.tempData.imgCh, PathToBasicImg)
+
+		// Определяем тип изменений страницы (ChangesData)
+		{
+			if pageInfo.ChangesInfo == "" {
+				if (len(pageInfo.ChangedGroups) == 0) && (len(pageInfo.ChangedTeachers) == 0) {
+					pageInfo.ChangesInfo = NonChanged
+				} else {
+					pageInfo.ChangesInfo = Changed
+				}
+			}
+		}
 	}
 }
 
@@ -310,6 +327,8 @@ func trackPageChanges(newPage *PageData, newHash string) {
 		}
 	}
 
+	newPage.ChangesInfo = ""
+
 	// Сравнивает две ячейки по тексту
 	compareCell := func(newCell, oldCell *CellData) {
 		var (
@@ -345,6 +364,8 @@ func trackPageChanges(newPage *PageData, newHash string) {
 	if newHash == oldHash {
 		// Сравнение таблиц
 
+		newPage.doFindChanges = false
+
 		for colIdx := range newPage.CountCols {
 			for rowIdx := range newPage.CountRows {
 				var (
@@ -376,6 +397,9 @@ func trackPageChanges(newPage *PageData, newHash string) {
 			}
 		}
 
+		newPage.ChangedGroups = oldPage.ChangedGroups
+		newPage.ChangedTeachers = oldPage.ChangedTeachers
+
 		return
 	}
 
@@ -390,6 +414,7 @@ func trackPageChanges(newPage *PageData, newHash string) {
 		// Если размерность таблиц не одинаковая
 		if (oldPage.CountCols != newPage.CountCols) || (oldPage.CountRows != newPage.CountRows) {
 			newPage.ChangesInfo = NewPageDimensionsTable
+			newPage.doFindChanges = false
 			return
 		}
 
@@ -431,6 +456,9 @@ func trackPageChanges(newPage *PageData, newHash string) {
 				}
 			}
 		}
+
+		newPage.oldGroupCells = oldPage.GroupCells
+		newPage.oldTeacherCells = oldPage.TeacherCells
 	}
 }
 

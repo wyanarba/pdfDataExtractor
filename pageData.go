@@ -44,6 +44,12 @@ type PageData struct {
 	// Изменения (добавлю позже)
 	ChangedGroups, ChangedTeachers map[string]struct{}
 
+	// Для обнаружения пропажи в изменениях (был преподаватель и пропал)
+	GroupCells, TeacherCells       map[string]([][2]int)
+	oldGroupCells, oldTeacherCells map[string]([][2]int)
+
+	doFindChanges bool // Была ли эта страница обработана ранее (особый формат изменений)
+
 	// Структура с временными данными (нужными для создания изображений), не доступными из вне и не сохраняющимися куда либо
 	tempData processingData
 }
@@ -55,6 +61,7 @@ var (
 	NewPage                ChangesData = "fullNew"
 	NewPageDimensionsTable ChangesData = "fullNewTableDimensionsChanged"
 	Changed                ChangesData = "changed"
+	NonChanged             ChangesData = "nonChanged"
 )
 
 type CropInfo struct {
