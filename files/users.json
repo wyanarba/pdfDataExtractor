@@ -1,0 +1,55 @@
+[
+  {
+    "TgId": 6266601544,
+    "Subscribes": [
+      {
+        "Type": "p",
+        "GroupId": 0,
+        "TeacherName": "ЕфимоваАИ",
+        "SendedMedia": [
+          null,
+          null
+        ]
+      },
+      {
+        "Type": "go",
+        "GroupId": 49,
+        "TeacherName": "",
+        "SendedMedia": [
+          [
+            {
+              "MessageId": 17175,
+              "WeekNumber": 202639,
+              "FilesId": [
+                "AgACAgIAAxkDAAJDpGqxiDTv1I5kwejTFHsaAy9D03IjAAIoHGsbFDmQSc3G3E_T2hvtAQADAgADeQADPQQ",
+                "AgACAgIAAxkDAAJDvmqxjoowcur6Il2AsmW2MMmXYu4UAAJeHGsbFDmQSXDPCwm23PygAQADAgADeQADPQQ",
+                "AgACAgIAAxkDAAJDw2qxjoxXVkJN_o45Y4OplhsZq_DkAAIEJWsbkVyIScTpp-jGxUf7AQADAgADeQADPQQ",
+                "AgACAgIAAxkDAAJDyGqxjo_6PQaAkxE8UN6KcEOU4QS9AAK6PGsbx0-ISQPS5jm1QIDNAQADAgADeQADPQQ",
+                "",
+                "",
+                ""
+              ]
+            }
+          ],
+          [
+            {
+              "MessageId": 17366,
+              "WeekNumber": 202639,
+              "FilesId": [
+                "",
+                "",
+                "",
+                "AgACAgIAAxkDAAJD0WqxjuuXeKAHoZX7Eoc7Mcg5Rd0BAAJZJ2sb5TqJSYbNslofktFcAQADAgADeQADPQQ",
+                "",
+                "",
+                ""
+              ]
+            }
+          ]
+        ]
+      }
+    ],
+    "IsGetOtherSchedule": false,
+    "IsMuted": false
+  }
+]
