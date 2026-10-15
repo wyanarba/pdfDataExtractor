@@ -4,6 +4,7 @@ import (
 	"image"
 	"path"
 	"slices"
+	"strings"
 	"sync"
 
 	"github.com/wyanarba/pdfDataExtractor/fileutils"
@@ -42,6 +43,9 @@ func CreateGroupsImages(pageInfo *PageData, saveFolderPath string) {
 
 	// Функция для создания самих изображений
 	var makeImages = func(groupName string) {
+		groupName = strings.ReplaceAll(groupName, "\n", "")
+		groupName = strings.ReplaceAll(groupName, " ", "")
+
 		var (
 			// Верхняя и нижняя ячейка в расписании группы
 			upperCell *CellData = groups[groupName]
@@ -117,8 +121,9 @@ func CreateGroupsImages(pageInfo *PageData, saveFolderPath string) {
 
 		// Изменено ли расписание группы
 		if pageInfo.doFindChanges == true {
-			for j := lowerCell.J; j <= upperCell.J; j++ {
+			for j := upperCell.J; j <= lowerCell.J; j++ {
 				cell := pageInfo.Cells[upperCell.I][j]
+
 				if cell.IsChanged {
 					changedGroups <- groupName
 					break

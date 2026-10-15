@@ -173,6 +173,14 @@ func CropImage(pageInfo *PageData, savePath string) {
 		cropInfo.CutOut.Max.Y = maxYBottom
 	}
 
+	// Проверка на isBrokenPage
+	{
+		if cropInfo.CutOut.Dx()+cropInfo.CutOut.Dy() < 400 {
+			pageInfo.isBrokenPage = true
+			return
+		}
+	}
+
 	// Отступы от краёв таблицы, что бы было красивее
 	const (
 		topMarginRatio    = 2.0

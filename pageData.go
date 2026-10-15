@@ -11,9 +11,12 @@ import (
 )
 
 type PageData struct {
-	BuildingIndex int // Индекс корпуса (0, 1)
-	PdfPageNumber int // Номер страницы в .pdf файле
-	DPI           int // DPI для страницы
+	BuildingIndex  int    // Индекс корпуса (0, 1)
+	PdfPageNumber  int    // Номер страницы в .pdf файле
+	DPI            int    // DPI для страницы
+	OldPdfFileHash string // md5 хеш для проверки
+
+	isBrokenPage bool // Страница невалидная (пустая без таблицы), удаление из файла в конце обработки
 
 	// Информация о типе изменений
 	ChangesInfo ChangesData
@@ -48,7 +51,7 @@ type PageData struct {
 	GroupCells, TeacherCells       map[string]([][2]int)
 	oldGroupCells, oldTeacherCells map[string]([][2]int)
 
-	doFindChanges bool // Была ли эта страница обработана ранее (особый формат изменений)
+	doFindChanges bool // Искать ли изменения
 
 	// Структура с временными данными (нужными для создания изображений), не доступными из вне и не сохраняющимися куда либо
 	tempData processingData

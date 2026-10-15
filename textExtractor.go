@@ -58,11 +58,10 @@ func ExtractText(pageInfo *PageData, pdfFilePath string, pdfPage int, tempImgPat
 	)
 
 	// Само извлечение текста
-	for _, literal := range page.Content().Text {
 
+	for _, literal := range page.Content().Text {
 		// Завершающий фразу символ
 		if literal.S[0] == 239 || literal.S[0] == '\n' {
-
 			// PointsToPixels
 			imgTb := imgTextBox{
 				Text: tb.Text, // Текст
@@ -81,6 +80,7 @@ func ExtractText(pageInfo *PageData, pdfFilePath string, pdfPage int, tempImgPat
 
 			// Защита от текста вне cropped изображения
 			if imgTb.Coords.In(pageInfo.boundsAfterCut) == false {
+				tb = pdfTextBox{}
 				continue
 			}
 

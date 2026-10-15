@@ -50,8 +50,9 @@ func CreateTeachersImages(pageInfo *PageData, saveFolderPath string) {
 
 		for _, name := range foundStrs {
 			// Форматирование
-			name = strings.Replace(name, " ", "", -1)
-			name = strings.Replace(name, ".", "", -1)
+			name = strings.ReplaceAll(name, " ", "")
+			name = strings.ReplaceAll(name, ".", "")
+			name = strings.ReplaceAll(name, "\n", "")
 
 			// Сохранение
 			cells, isOk := teachers[name]

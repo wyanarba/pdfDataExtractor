@@ -6,6 +6,7 @@ import (
 	"image/png"
 	"log"
 	"os"
+	"strings"
 )
 
 func ReadImg(filePath string) (img *image.RGBA) {
@@ -27,9 +28,11 @@ func ReadImg(filePath string) (img *image.RGBA) {
 }
 
 func SaveImg(img image.Image, filePath string) {
+	filePath = strings.ReplaceAll(filePath, "\n", "")
+
 	outFile, err := os.Create(filePath)
 	if err != nil {
-		log.Fatalf("Не удалось создать итоговый файл %s: %v", filePath, err)
+		log.Fatalf("Не удалось создать итоговый файл %s, [%d]: %v", filePath, []byte(filePath), err)
 	}
 	defer outFile.Close()
 	err = png.Encode(outFile, img)

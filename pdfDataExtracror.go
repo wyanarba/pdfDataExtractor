@@ -30,7 +30,7 @@ const (
 )
 
 func ProcessPdf(pdfFilePath string, buildingIndex int) *FileData {
-	Settings.Logger.Debug("aaaa")
+	Settings.Logger.Info("a,aaa")
 
 	var fileData = FileData{
 		PdfFileName:   pdfFilePath,
@@ -108,6 +108,9 @@ func processPdf(fileData *FileData) error {
 		wg   = sync.WaitGroup{}
 	)
 	for pageNumber := range fileData.PagesCount {
+		if pageNumber != 0 {
+			continue
+		}
 		wg.Add(1)
 		go func() {
 			pool <- struct{}{}
@@ -121,6 +124,15 @@ func processPdf(fileData *FileData) error {
 
 	}
 	wg.Wait()
+
+	// Удаление не валидных страниц
+	for pageIdx := range fileData.PagesInfo {
+		page := &fileData.PagesInfo[pageIdx]
+		if page.isBrokenPage {
+			fileData.PagesInfo = slices.Delete(fileData.PagesInfo, pageIdx, pageIdx+1)
+			fileData.PagesCount--
+		}
+	}
 
 	// TEMP таймер
 	Settings.Logger.Info("Обработано за", time.Since(start))
@@ -203,6 +215,11 @@ func processPdfPage(fileData *FileData, pageNumber int, imagesBaseFolder string)
 				PathToBasicImg,
 			)
 
+			// Защита от isBrokenPage
+			if pageInfo.isBrokenPage {
+				return
+			}
+
 			pageInfo.tempData.imgCh = fileutils.ReadImg(PathToBasicImg)
 
 			// Требование от телеграмм api, что бы длинна + ширина до 10 000
@@ -228,6 +245,7 @@ func processPdfPage(fileData *FileData, pageNumber int, imagesBaseFolder string)
 			path.Join(specialImagesFolder, "temp.png"),
 		)
 
+		fmt.Println(pageInfo.PdfPageNumber, pageInfo.DateFontSize)
 		// Подготавливаем картинки с подписями над маленькими версиями расписания
 		pageInfo.tempData.init(
 			pageInfo.BuildingIndex,
@@ -360,6 +378,8 @@ func trackPageChanges(newPage *PageData, newHash string) {
 		}
 	}
 
+	newPage.OldPdfFileHash = oldHash
+
 	// Тот же самый файл что и раньше
 	if newHash == oldHash {
 		// Сравнение таблиц
@@ -378,7 +398,9 @@ func trackPageChanges(newPage *PageData, newHash string) {
 				case CellType_Divided:
 					copyChangeStatus(newCell.DividedParts[0], oldCell.DividedParts[0])
 					copyChangeStatus(newCell.DividedParts[1], oldCell.DividedParts[1])
-					copyChangeStatus(newCell, oldCell)
+					if newCell.DividedParts[0].IsChanged || newCell.DividedParts[1].IsChanged {
+						newCell.IsChanged = true
+					}
 
 				// Часть от большой ячейки
 				case CellType_PartOfDivided:
@@ -399,11 +421,13 @@ func trackPageChanges(newPage *PageData, newHash string) {
 
 		newPage.ChangedGroups = oldPage.ChangedGroups
 		newPage.ChangedTeachers = oldPage.ChangedTeachers
+		newPage.OldPdfFileHash = oldPage.OldPdfFileHash
+		newPage.ChangesInfo = oldPage.ChangesInfo
 
 		return
 	}
 
-	// Сравнение первой страницы
+	// Сравнение страницы
 	{
 		// Сравнение таблиц
 		var (
@@ -431,6 +455,7 @@ func trackPageChanges(newPage *PageData, newHash string) {
 					if newCell.CellType == CellType_PartOfMerged {
 						newCell.MergedCell.IsChanged = true
 					}
+					continue
 				}
 
 				switch newCell.CellType {
@@ -438,7 +463,9 @@ func trackPageChanges(newPage *PageData, newHash string) {
 				case CellType_Divided:
 					compareCell(newCell.DividedParts[0], oldCell.DividedParts[0])
 					compareCell(newCell.DividedParts[1], oldCell.DividedParts[1])
-					compareCell(newCell, oldCell)
+					if newCell.DividedParts[0].IsChanged || newCell.DividedParts[1].IsChanged {
+						newCell.IsChanged = true
+					}
 
 				// Часть от большой ячейки
 				case CellType_PartOfDivided:
