@@ -330,7 +330,9 @@ func trackPageChanges(newPage *PageData, newHash string) {
 		oldHash = oldFileInfo.PdfFileHash
 	}
 
-	// Копирует информацию о изменении ячеек
+	newPage.ChangesInfo = ""
+
+	// copyChangeStatus копирует информацию о изменении ячеек
 	copyChangeStatus := func(newCell, oldCell *CellData) {
 		if oldCell.IsChanged {
 			newCell.IsChanged = true
@@ -340,9 +342,7 @@ func trackPageChanges(newPage *PageData, newHash string) {
 		}
 	}
 
-	newPage.ChangesInfo = ""
-
-	// Сравнивает две ячейки по тексту
+	// compareCell сравнивает две ячейки по тексту
 	compareCell := func(newCell, oldCell *CellData) {
 		var (
 			newLines = []string{}
@@ -418,6 +418,7 @@ func trackPageChanges(newPage *PageData, newHash string) {
 		newPage.ChangedTeachers = oldPage.ChangedTeachers
 		newPage.OldPdfFileHash = oldPage.OldPdfFileHash
 		newPage.ChangesInfo = oldPage.ChangesInfo
+		newPage.IsChangeEarlier = oldPage.IsChangeEarlier
 
 		return
 	}
@@ -481,6 +482,18 @@ func trackPageChanges(newPage *PageData, newHash string) {
 
 		newPage.oldGroupCells = oldPage.GroupCells
 		newPage.oldTeacherCells = oldPage.TeacherCells
+	}
+
+	// Проверка на изменение времени
+	for _, cell := range newPage.Cells[2] {
+		if cell.IsChanged {
+			newPage.ChangesInfo = TimeChanged
+		}
+	}
+
+	switch oldPage.ChangesInfo {
+	case TimeChanged, Changed:
+		newPage.IsChangeEarlier = true
 	}
 }
 

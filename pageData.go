@@ -19,7 +19,8 @@ type PageData struct {
 	isBrokenPage bool // Страница невалидная (пустая без таблицы), удаление из файла в конце обработки
 
 	// Информация о типе изменений
-	ChangesInfo ChangesData
+	ChangesInfo     ChangesData
+	IsChangeEarlier bool // Являлась ли страница измененной в прошлой версии расписания
 
 	// Дата
 	Date           string  // Дата "13.06.2026г. (суббота)"
@@ -63,6 +64,7 @@ type ChangesData string
 var (
 	NewPage                ChangesData = "fullNew"
 	NewPageDimensionsTable ChangesData = "fullNewTableDimensionsChanged"
+	TimeChanged            ChangesData = "fullNewTimeChanged" // Не исключает и прочие изменения
 	Changed                ChangesData = "changed"
 	NonChanged             ChangesData = "nonChanged"
 )
