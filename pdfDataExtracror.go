@@ -84,6 +84,7 @@ func processPdf(fileData *FileData) error {
 		fileData.PagesCount = r.NumPage()
 
 		fileData.PagesInfo = make([]PageData, fileData.PagesCount)
+		fmt.Println("ADADADA", fileData.PagesCount)
 	}
 
 	// Получение хэша файла
@@ -108,9 +109,6 @@ func processPdf(fileData *FileData) error {
 		wg   = sync.WaitGroup{}
 	)
 	for pageNumber := range fileData.PagesCount {
-		if pageNumber != 0 {
-			continue
-		}
 		wg.Add(1)
 		go func() {
 			pool <- struct{}{}
@@ -125,14 +123,11 @@ func processPdf(fileData *FileData) error {
 	}
 	wg.Wait()
 
-	// Удаление не валидных страниц
-	for pageIdx := range fileData.PagesInfo {
-		page := &fileData.PagesInfo[pageIdx]
-		if page.isBrokenPage {
-			fileData.PagesInfo = slices.Delete(fileData.PagesInfo, pageIdx, pageIdx+1)
-			fileData.PagesCount--
-		}
-	}
+	// Удаление невалидных страниц
+	fileData.PagesInfo = slices.DeleteFunc(fileData.PagesInfo, func(p PageData) bool {
+		return p.isBrokenPage
+	})
+	fileData.PagesCount = len(fileData.PagesInfo)
 
 	// TEMP таймер
 	Settings.Logger.Info("Обработано за", time.Since(start))
