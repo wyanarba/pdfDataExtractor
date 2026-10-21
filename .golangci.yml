@@ -1,0 +1,18 @@
+linters:
+  default: none
+  enable:
+    - errcheck
+
+linters-settings:
+  errcheck:
+    # Подсвечивать присваивание ошибок в пустой идентификатор (_ = fn())
+    check-blank: true
+    # Проверять приведение типов: val := x.(MyType) без ok
+    check-type-assertions: true
+    # Исключения для функций, где ошибку обычно допустимо не проверять
+    exclude-functions:
+      - (*bytes.Buffer).Write
+      - (*bytes.Buffer).WriteString
+      - fmt.Println
+      - fmt.Printf
+      - fmt.Fprintln

@@ -120,7 +120,7 @@ func CreateGroupsImages(pageInfo *PageData, saveFolderPath string) {
 		}
 
 		// Изменено ли расписание группы
-		if pageInfo.doFindChanges == true {
+		if pageInfo.doFindChanges {
 			for j := upperCell.J; j <= lowerCell.J; j++ {
 				cell := pageInfo.Cells[upperCell.I][j]
 
@@ -178,14 +178,14 @@ func CreateGroupsImages(pageInfo *PageData, saveFolderPath string) {
 			[2]int{currentCell.I, currentCell.J},
 		)
 	}
-	if pageInfo.doFindChanges == true {
+	if pageInfo.doFindChanges {
 		// Сравнение с pageInfo.oldTeacherCells
 		if len(pageInfo.oldGroupCells) != 0 {
 			for groupName := range pageInfo.oldGroupCells {
-				isChanged := slices.Equal(
+				isChanged := !slices.Equal(
 					pageInfo.oldGroupCells[groupName],
 					pageInfo.GroupCells[groupName],
-				) == false
+				)
 
 				if isChanged {
 					pageInfo.ChangedGroups[groupName] = struct{}{}

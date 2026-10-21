@@ -428,7 +428,7 @@ func castRay(img *image.RGBA, lenRay, rayOffsetCoord, rayStartCoord int, directi
 				),
 			)
 
-			if isDark == false {
+			if !isDark {
 				isDone = false
 				break
 			}
@@ -446,7 +446,7 @@ func castRay(img *image.RGBA, lenRay, rayOffsetCoord, rayStartCoord int, directi
 				),
 			)
 
-			if isDark == false {
+			if !isDark {
 				isDone = false
 				break
 			}
@@ -464,7 +464,7 @@ func castRay(img *image.RGBA, lenRay, rayOffsetCoord, rayStartCoord int, directi
 				),
 			)
 
-			if isDark == false {
+			if !isDark {
 				isDone = false
 				break
 			}
@@ -482,7 +482,7 @@ func castRay(img *image.RGBA, lenRay, rayOffsetCoord, rayStartCoord int, directi
 				),
 			)
 
-			if isDark == false {
+			if !isDark {
 				isDone = false
 				break
 			}

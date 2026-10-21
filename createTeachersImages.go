@@ -58,7 +58,7 @@ func CreateTeachersImages(pageInfo *PageData, saveFolderPath string) {
 			cells, isOk := teachers[name]
 
 			// Первая запись
-			if isOk == false {
+			if !isOk {
 				cells = []*CellData{}
 			}
 
@@ -283,7 +283,7 @@ func CreateTeachersImages(pageInfo *PageData, saveFolderPath string) {
 				)
 
 				// Отслеживание изменений
-				if pageInfo.doFindChanges == true && currentCell.IsChanged {
+				if pageInfo.doFindChanges && currentCell.IsChanged {
 					changedTeachers <- teacherName
 				}
 			}
@@ -349,14 +349,14 @@ func CreateTeachersImages(pageInfo *PageData, saveFolderPath string) {
 			)
 		}
 	}
-	if pageInfo.doFindChanges == true {
+	if pageInfo.doFindChanges {
 		// Сравнение с pageInfo.oldTeacherCells
 		if len(pageInfo.oldTeacherCells) != 0 {
 			for teacherName := range pageInfo.oldTeacherCells {
-				isChanged := slices.Equal(
+				isChanged := !slices.Equal(
 					pageInfo.oldTeacherCells[teacherName],
 					pageInfo.TeacherCells[teacherName],
-				) == false
+				)
 
 				if isChanged {
 					pageInfo.ChangedTeachers[teacherName] = struct{}{}

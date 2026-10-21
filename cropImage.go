@@ -41,13 +41,13 @@ func CropImage(pageInfo *PageData, savePath string) {
 				)
 
 				// Начало и конец линии
-				if lineStarted == false {
+				if !lineStarted {
 					if isDark {
 						lineStarted = true
 						lineStart = x
 					}
 				} else {
-					if isDark == false {
+					if !isDark {
 						lineEnd = x - 1
 						lineEnded = true
 						break
@@ -62,7 +62,7 @@ func CropImage(pageInfo *PageData, savePath string) {
 				info, ok := lineLengths[lineStart]
 
 				// Значение встречено впервые
-				if ok == false {
+				if !ok {
 					info.lengths = map[int]int{}
 				}
 

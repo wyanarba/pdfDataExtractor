@@ -79,7 +79,7 @@ func ExtractText(pageInfo *PageData, pdfFilePath string, pdfPage int, tempImgPat
 			imgTb.Coords.X += imgTb.FontSize / 4
 
 			// Защита от текста вне cropped изображения
-			if imgTb.Coords.In(pageInfo.boundsAfterCut) == false {
+			if !imgTb.Coords.In(pageInfo.boundsAfterCut) {
 				tb = pdfTextBox{}
 				continue
 			}
@@ -189,9 +189,5 @@ func ExtractText(pageInfo *PageData, pdfFilePath string, pdfPage int, tempImgPat
 		// Кодируем изображение в PNG
 		fileutils.SaveImg(img, tempImgPath)
 	}
-
-}
-
-func convertPointsToPixels() {
 
 }

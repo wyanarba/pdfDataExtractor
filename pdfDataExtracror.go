@@ -29,7 +29,7 @@ const (
 	HeaderRowsCount    = 2 // Вертикальные
 )
 
-func ProcessPdf(pdfFilePath string, buildingIndex int) *FileData {
+func ProcessPdf(pdfFilePath string, buildingIndex int) (*FileData, error) {
 	Settings.Logger.Info("a,aaa")
 
 	var fileData = FileData{
@@ -37,24 +37,36 @@ func ProcessPdf(pdfFilePath string, buildingIndex int) *FileData {
 		buildingIndex: buildingIndex,
 	}
 
-	processPdf(&fileData)
-
-	data, err := json.MarshalIndent(fileData, "", "    ")
+	// Обработка файла
+	err := processPdf(&fileData)
 	if err != nil {
-		Settings.Logger.Error(err)
+		return nil, err
 	}
-	file, _ := os.OpenFile(
-		path.Join(Settings.BasePdfPath, strconv.Itoa(buildingIndex)+"_Data.json"),
-		os.O_CREATE|os.O_WRONLY|os.O_TRUNC,
-		0777,
-	)
-	if err != nil {
-		Settings.Logger.Error(err)
-	}
-	defer file.Close()
-	file.Write(data)
 
-	return &fileData
+	// Запись _Data.json
+	{
+		data, err := json.MarshalIndent(fileData, "", "    ")
+		if err != nil {
+			return nil, err
+		}
+
+		file, err := os.OpenFile(
+			path.Join(Settings.BasePdfPath, strconv.Itoa(buildingIndex)+"_Data.json"),
+			os.O_CREATE|os.O_WRONLY|os.O_TRUNC,
+			0777,
+		)
+		if err != nil {
+			return nil, err
+		}
+		defer file.Close()
+
+		_, err = file.Write(data)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &fileData, nil
 }
 
 // makeBaseImageFromPdf из страницы pdf делает изображение
@@ -84,7 +96,6 @@ func processPdf(fileData *FileData) error {
 		fileData.PagesCount = r.NumPage()
 
 		fileData.PagesInfo = make([]PageData, fileData.PagesCount)
-		fmt.Println("ADADADA", fileData.PagesCount)
 	}
 
 	// Получение хэша файла
@@ -94,7 +105,7 @@ func processPdf(fileData *FileData) error {
 			err  error
 		)
 		if data, err = os.ReadFile(path.Join(Settings.BasePdfPath, fileData.PdfFileName)); err != nil {
-			errors.Join(errors.New("Не удалось прочитать файл, для получения хэша"), err)
+			return errors.Join(errors.New("Не удалось прочитать файл, для получения хэша"), err)
 		} else {
 			hash := sha256.Sum256(data)
 			fileData.PdfFileHash = fmt.Sprintf("%x", hash)
@@ -191,7 +202,7 @@ func processPdfPage(fileData *FileData, pageNumber int, imagesBaseFolder string)
 	{
 		// Уменьшать DPI, пока фото не подойдёт под требования телеграмма
 		imgIsDone := false
-		for imgIsDone != true {
+		for !imgIsDone {
 			//Pdf page -> .png
 			makeBaseImageFromPdf(
 				path.Join(Settings.BasePdfPath, fileData.PdfFileName),
@@ -345,8 +356,8 @@ func trackPageChanges(newPage *PageData, newHash string) {
 	// compareCell сравнивает две ячейки по тексту
 	compareCell := func(newCell, oldCell *CellData) {
 		var (
-			newLines = []string{}
-			oldLines = []string{}
+			newLines []string
+			oldLines []string
 		)
 
 		// Получение линий
